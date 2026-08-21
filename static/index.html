@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient-Centered Graph Retrieval</title>
+<link rel="stylesheet" href="/static/styles.css">
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>Patient-Centered Graph Retrieval</h1>
+  <span class="subtitle">PCST &amp; Steiner-tree keyword search on a synthetic medical graph</span>
+</header>
+
+<div class="layout">
+  <!-- LEFT COLUMN -->
+  <section class="panel col-left">
+    <div class="panel-head">
+      <h2>A · Full Synthetic Graph</h2>
+      <button id="btn-fit-full" class="mini">Fit</button>
+    </div>
+    <div id="full-graph" class="graph-canvas"></div>
+    <div id="full-info" class="hover-info">Hover a node/edge for details.</div>
+  </section>
+
+  <!-- MIDDLE COLUMN -->
+  <section class="panel col-mid">
+    <div class="panel-head"><h2>B · Query Panel</h2></div>
+    <div id="query-panel" class="query-panel"></div>
+
+    <div class="panel-head"><h2>C · Algorithm &amp; Parameters</h2></div>
+    <div class="controls">
+      <label>Algorithm:
+        <select id="algo-select">
+          <option value="bfs">BFS baseline</option>
+          <option value="pcst">PCST</option>
+          <option value="steiner">Steiner keyword</option>
+        </select>
+      </label>
+      <label>MAX_HOPS:
+        <input id="max-hops" type="range" min="1" max="4" value="4">
+        <span id="max-hops-val">4</span>
+      </label>
+      <label>Mode:
+        <select id="mode-select">
+          <option value="strict">Strict (5/5)</option>
+          <option value="soft">Soft ≥0.8</option>
+        </select>
+      </label>
+      <label class="checkbox">
+        <input id="hub-penalty" type="checkbox"> Hub penalty (rho=1.3)
+      </label>
+      <label class="checkbox">
+        <input id="show-filtered" type="checkbox" checked> Show filtered edges report
+      </label>
+      <div class="btn-row">
+        <button id="btn-run" class="primary">▶ Run Retrieval</button>
+        <button id="btn-compare" class="secondary">⇄ Compare Algorithms</button>
+        <button id="btn-animate" class="secondary">🎬 Animate Search</button>
+      </div>
+    </div>
+
+    <div class="panel-head"><h2>D · Candidate Patients</h2></div>
+    <div class="table-wrap">
+      <table id="patient-table">
+        <thead><tr>
+          <th>Patient</th><th>Cov</th><th>Score</th><th>Avg hop</th><th>Graph cost</th><th>Result</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- RIGHT COLUMN -->
+  <section class="panel col-right">
+    <div class="panel-head">
+      <h2>E · Patient-Centered Subgraph</h2>
+      <span id="sub-patient-label" class="mini">select a patient</span>
+    </div>
+    <div id="sub-graph" class="graph-canvas"></div>
+
+    <div class="panel-head"><h2>Path Explanation</h2></div>
+    <div id="path-explanation" class="path-explanation">Click a patient row to see condition paths.</div>
+  </section>
+</div>
+
+<!-- BOTTOM FULL WIDTH -->
+<section class="panel full">
+  <div class="panel-head"><h2>F · Filtered Edges (numeric hard constraints)</h2></div>
+  <div id="filter-report" class="filter-report"></div>
+</section>
+
+<section class="panel full">
+  <div class="panel-head"><h2>G · Algorithm Comparison</h2></div>
+  <div id="comparison-section">
+    <div class="table-wrap">
+      <table id="comparison-table">
+        <thead><tr>
+          <th>Patient</th><th>GT</th>
+          <th>BFS cov</th><th>BFS rank</th>
+          <th>PCST cov</th><th>PCST rank</th>
+          <th>Steiner cov</th><th>Steiner rank</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="metrics-row" class="metrics-row"></div>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

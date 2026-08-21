@@ -1,0 +1,33 @@
+[
+  {
+    "id": "C1",
+    "anchor": "Hypertension",
+    "kind": "categorical"
+  },
+  {
+    "id": "C2",
+    "anchor": "Systolic Blood Pressure",
+    "kind": "numeric",
+    "operator": ">",
+    "value": 140,
+    "unit": "mmHg"
+  },
+  {
+    "id": "C3",
+    "anchor": "Diabetes",
+    "kind": "categorical"
+  },
+  {
+    "id": "C4",
+    "anchor": "HbA1c",
+    "kind": "numeric",
+    "operator": ">",
+    "value": 7.0,
+    "unit": "%"
+  },
+  {
+    "id": "C5",
+    "anchor": "Amlodipine",
+    "kind": "categorical"
+  }
+]

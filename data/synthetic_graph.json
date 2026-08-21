@@ -1,0 +1,622 @@
+{
+  "nodes": [
+    {
+      "id": "P001",
+      "type": "patient"
+    },
+    {
+      "id": "P002",
+      "type": "patient"
+    },
+    {
+      "id": "P003",
+      "type": "patient"
+    },
+    {
+      "id": "P004",
+      "type": "patient"
+    },
+    {
+      "id": "P005",
+      "type": "patient"
+    },
+    {
+      "id": "P006",
+      "type": "patient"
+    },
+    {
+      "id": "P007",
+      "type": "patient"
+    },
+    {
+      "id": "P008",
+      "type": "patient"
+    },
+    {
+      "id": "Hypertension",
+      "type": "disease"
+    },
+    {
+      "id": "Diabetes",
+      "type": "disease"
+    },
+    {
+      "id": "Chronic Kidney Disease",
+      "type": "disease"
+    },
+    {
+      "id": "Heart Failure",
+      "type": "disease"
+    },
+    {
+      "id": "Hyperlipidemia",
+      "type": "disease"
+    },
+    {
+      "id": "Systolic Blood Pressure",
+      "type": "indicator"
+    },
+    {
+      "id": "Diastolic Blood Pressure",
+      "type": "indicator"
+    },
+    {
+      "id": "HbA1c",
+      "type": "indicator"
+    },
+    {
+      "id": "BMI",
+      "type": "indicator"
+    },
+    {
+      "id": "LDL",
+      "type": "indicator"
+    },
+    {
+      "id": "Creatinine",
+      "type": "indicator"
+    },
+    {
+      "id": "Amlodipine",
+      "type": "drug"
+    },
+    {
+      "id": "Metformin",
+      "type": "drug"
+    },
+    {
+      "id": "Lisinopril",
+      "type": "drug"
+    },
+    {
+      "id": "Atorvastatin",
+      "type": "drug"
+    },
+    {
+      "id": "Insulin",
+      "type": "drug"
+    },
+    {
+      "id": "MetabolicCondition",
+      "type": "intermediate"
+    },
+    {
+      "id": "DiagnosisCategory",
+      "type": "intermediate"
+    },
+    {
+      "id": "CardiovascularCondition",
+      "type": "intermediate"
+    },
+    {
+      "id": "TreatmentEpisode",
+      "type": "intermediate"
+    },
+    {
+      "id": "MedicationOrder_P4",
+      "type": "intermediate"
+    },
+    {
+      "id": "LabPanel_P4",
+      "type": "intermediate"
+    },
+    {
+      "id": "Encounter_P4",
+      "type": "intermediate"
+    },
+    {
+      "id": "LabPanel_P7",
+      "type": "intermediate"
+    },
+    {
+      "id": "Encounter_P7",
+      "type": "intermediate"
+    },
+    {
+      "id": "CommonClinicalConcept",
+      "type": "intermediate"
+    },
+    {
+      "id": "CommonEncounter",
+      "type": "intermediate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "Hypertension",
+      "target": "P001",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "P002",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "P003",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "P004",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "P005",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "P006",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "P007",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hypertension",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "CommonClinicalConcept",
+      "target": "CommonEncounter",
+      "relation_type": "concept_to_encounter"
+    },
+    {
+      "source": "CommonEncounter",
+      "target": "P008",
+      "relation_type": "encounter_patient"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P001",
+      "relation_type": "measurement",
+      "value": 158,
+      "unit": "mmHg",
+      "time": "2026-01-12"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P002",
+      "relation_type": "measurement",
+      "value": 151,
+      "unit": "mmHg",
+      "time": "2026-01-20"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P003",
+      "relation_type": "measurement",
+      "value": 132,
+      "unit": "mmHg",
+      "time": "2026-01-05"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P004",
+      "relation_type": "measurement",
+      "value": 148,
+      "unit": "mmHg",
+      "time": "2026-01-18"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P005",
+      "relation_type": "measurement",
+      "value": 155,
+      "unit": "mmHg",
+      "time": "2026-01-22"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P006",
+      "relation_type": "measurement",
+      "value": 145,
+      "unit": "mmHg",
+      "time": "2026-01-09"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P007",
+      "relation_type": "measurement",
+      "value": 160,
+      "unit": "mmHg",
+      "time": "2026-01-14"
+    },
+    {
+      "source": "Systolic Blood Pressure",
+      "target": "P008",
+      "relation_type": "measurement",
+      "value": 152,
+      "unit": "mmHg",
+      "time": "2026-01-16"
+    },
+    {
+      "source": "Diabetes",
+      "target": "P001",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Diabetes",
+      "target": "P002",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Diabetes",
+      "target": "P003",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Diabetes",
+      "target": "P006",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Diabetes",
+      "target": "MetabolicCondition",
+      "relation_type": "diagnosis_category"
+    },
+    {
+      "source": "MetabolicCondition",
+      "target": "Encounter_P4",
+      "relation_type": "has_encounter"
+    },
+    {
+      "source": "Encounter_P4",
+      "target": "P004",
+      "relation_type": "encounter_patient"
+    },
+    {
+      "source": "Diabetes",
+      "target": "DiagnosisCategory",
+      "relation_type": "diagnosis_category"
+    },
+    {
+      "source": "DiagnosisCategory",
+      "target": "P007",
+      "relation_type": "category_patient"
+    },
+    {
+      "source": "Diabetes",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "HbA1c",
+      "target": "P001",
+      "relation_type": "lab_measurement",
+      "value": 8.2,
+      "unit": "%",
+      "time": "2026-01-15"
+    },
+    {
+      "source": "HbA1c",
+      "target": "P002",
+      "relation_type": "lab_measurement",
+      "value": 7.8,
+      "unit": "%",
+      "time": "2026-01-21"
+    },
+    {
+      "source": "HbA1c",
+      "target": "P003",
+      "relation_type": "lab_measurement",
+      "value": 8.5,
+      "unit": "%",
+      "time": "2026-01-06"
+    },
+    {
+      "source": "HbA1c",
+      "target": "P006",
+      "relation_type": "lab_measurement",
+      "value": 6.1,
+      "unit": "%",
+      "time": "2026-01-10"
+    },
+    {
+      "source": "HbA1c",
+      "target": "P008",
+      "relation_type": "lab_measurement",
+      "value": 7.5,
+      "unit": "%",
+      "time": "2026-01-17"
+    },
+    {
+      "source": "HbA1c",
+      "target": "LabPanel_P4",
+      "relation_type": "lab_measurement",
+      "value": 7.9,
+      "unit": "%",
+      "time": "2026-01-19"
+    },
+    {
+      "source": "LabPanel_P4",
+      "target": "Encounter_P4",
+      "relation_type": "lab_to_encounter"
+    },
+    {
+      "source": "HbA1c",
+      "target": "LabPanel_P7",
+      "relation_type": "lab_measurement",
+      "value": 8.0,
+      "unit": "%",
+      "time": "2026-01-13"
+    },
+    {
+      "source": "LabPanel_P7",
+      "target": "Encounter_P7",
+      "relation_type": "lab_to_encounter"
+    },
+    {
+      "source": "Encounter_P7",
+      "target": "P007",
+      "relation_type": "encounter_patient"
+    },
+    {
+      "source": "Amlodipine",
+      "target": "P001",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Amlodipine",
+      "target": "P003",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Amlodipine",
+      "target": "P007",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Amlodipine",
+      "target": "MedicationOrder_P4",
+      "relation_type": "medication_order"
+    },
+    {
+      "source": "MedicationOrder_P4",
+      "target": "P004",
+      "relation_type": "order_patient"
+    },
+    {
+      "source": "Amlodipine",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Chronic Kidney Disease",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Heart Failure",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Hyperlipidemia",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Diastolic Blood Pressure",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "BMI",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "LDL",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Creatinine",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Metformin",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Lisinopril",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Atorvastatin",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "Insulin",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "CardiovascularCondition",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "TreatmentEpisode",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "DiagnosisCategory",
+      "target": "CommonClinicalConcept",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "CommonClinicalConcept",
+      "target": "TreatmentEpisode",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "CommonClinicalConcept",
+      "target": "CardiovascularCondition",
+      "relation_type": "concept_link"
+    },
+    {
+      "source": "CommonEncounter",
+      "target": "TreatmentEpisode",
+      "relation_type": "encounter_episode"
+    },
+    {
+      "source": "Chronic Kidney Disease",
+      "target": "P001",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Heart Failure",
+      "target": "P003",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hyperlipidemia",
+      "target": "P002",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Chronic Kidney Disease",
+      "target": "P006",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Heart Failure",
+      "target": "P008",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Hyperlipidemia",
+      "target": "P004",
+      "relation_type": "diagnosis"
+    },
+    {
+      "source": "Metformin",
+      "target": "P001",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Metformin",
+      "target": "P002",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Metformin",
+      "target": "P006",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Lisinopril",
+      "target": "P003",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Lisinopril",
+      "target": "P007",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Atorvastatin",
+      "target": "P004",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Atorvastatin",
+      "target": "P005",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Insulin",
+      "target": "P006",
+      "relation_type": "medication"
+    },
+    {
+      "source": "Diastolic Blood Pressure",
+      "target": "P001",
+      "relation_type": "measurement",
+      "value": 96,
+      "unit": "mmHg",
+      "time": "2026-01-12"
+    },
+    {
+      "source": "Diastolic Blood Pressure",
+      "target": "P005",
+      "relation_type": "measurement",
+      "value": 94,
+      "unit": "mmHg",
+      "time": "2026-01-22"
+    },
+    {
+      "source": "BMI",
+      "target": "P005",
+      "relation_type": "measurement",
+      "value": 31,
+      "unit": "kg/m2",
+      "time": "2026-01-22"
+    },
+    {
+      "source": "BMI",
+      "target": "P002",
+      "relation_type": "measurement",
+      "value": 29,
+      "unit": "kg/m2",
+      "time": "2026-01-20"
+    },
+    {
+      "source": "LDL",
+      "target": "P002",
+      "relation_type": "measurement",
+      "value": 160,
+      "unit": "mg/dL",
+      "time": "2026-01-21"
+    },
+    {
+      "source": "LDL",
+      "target": "P004",
+      "relation_type": "measurement",
+      "value": 145,
+      "unit": "mg/dL",
+      "time": "2026-01-18"
+    },
+    {
+      "source": "Creatinine",
+      "target": "P006",
+      "relation_type": "measurement",
+      "value": 1.8,
+      "unit": "mg/dL",
+      "time": "2026-01-09"
+    }
+  ]
+}

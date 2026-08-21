@@ -1,0 +1,64 @@
+{
+  "P001": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": true,
+    "C5": true
+  },
+  "P002": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": true,
+    "C5": false
+  },
+  "P003": {
+    "C1": true,
+    "C2": false,
+    "C3": true,
+    "C4": true,
+    "C5": true
+  },
+  "P004": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": true,
+    "C5": true
+  },
+  "P005": {
+    "C1": true,
+    "C2": true,
+    "C3": false,
+    "C4": false,
+    "C5": false
+  },
+  "P006": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": false,
+    "C5": false
+  },
+  "P007": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": true,
+    "C5": true
+  },
+  "P008": {
+    "C1": true,
+    "C2": true,
+    "C3": true,
+    "C4": true,
+    "C5": true
+  },
+  "strict_valid_patients": [
+    "P001",
+    "P004",
+    "P007",
+    "P008"
+  ]
+}
