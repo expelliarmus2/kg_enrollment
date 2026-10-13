@@ -116,3 +116,16 @@ td.nomatch { color: #e06a6a; }
 .legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; padding: 4px; }
 .legend .item { display: flex; align-items: center; gap: 4px; }
 .legend .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+
+tr.compare-row { cursor: pointer; }
+tr.compare-row:hover { background: #1f3550; }
+tr.compare-row.active { background: #2c5a3a; }
+
+.compare-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+button.tab { background: #1c2837; border-color: #243648; }
+button.tab:hover { background: #243648; }
+button.tab.active { background: #2c6e9f; border-color: #3a82bf; color: #fff; font-weight: 700; }
+
+.compare-metrics { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.compare-metrics .metric { min-width: 90px; padding: 5px 9px; }
+.compare-metrics .metric .value { font-size: 14px; }

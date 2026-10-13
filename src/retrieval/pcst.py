@@ -37,6 +37,7 @@ from ..scoring import (
     graph_cost,
     score_generic,
 )
+from ._traversal import shortest_paths_to_patients
 from .base import RetrievalResult
 
 DEFAULT_CONDITION_PRIZE = 10.0
@@ -208,6 +209,132 @@ def retrieve_pcst(
         results.append(RetrievalResult(
             patient_id=pid,
             algorithm="pcst",
+            score=score,
+            coverage_count=cov_n,
+            coverage_ratio=cov_r,
+            matched_conditions=matched,
+            condition_paths={cid: acc[cid] for cid in cond_ids},
+            nodes=sorted(sub_nodes),
+            edges=sub_edges,
+            graph_cost=union_cost,
+            strict_match=cov_r >= 1.0 - 1e-9,
+            visited_nodes=total_vn,
+            visited_edges=total_ve,
+            elapsed_ms=(time.perf_counter() - t0) * 1000,
+        ))
+    return results
+
+
+def retrieve_pcst_shared(
+    G: nx.MultiDiGraph,
+    conditions: list[dict[str, Any]],
+    *,
+    max_hops: int = 4,
+    strict: bool = True,
+    soft_threshold: float = 0.8,
+    rho: float = 0.0,
+    condition_prize: float = DEFAULT_CONDITION_PRIZE,
+) -> list[RetrievalResult]:
+    """Single-pass PCST: one BFS per anchor shared across all patients.
+
+    Identical output to ``retrieve_pcst`` (same shortest paths, same
+    prize-pruning, same union subgraph / score) but the search phase is
+    O(K * (V+E)) instead of O(K * P * (V+E)) -- the patient count P no
+    longer multiplies the traversal cost.
+    """
+    t0 = time.perf_counter()
+    H = build_query_conditioned_graph(G, conditions)
+    patients = patient_nodes(H)
+    cond_ids = [c["id"] for c in conditions]
+    m = len(conditions)
+    prizes = {c["id"]: condition_prize for c in conditions}
+
+    total_vn = 0
+    total_ve = 0
+
+    # One BFS per anchor; records shortest path to EVERY reachable patient.
+    all_paths: dict[tuple[str, str], list[str] | None] = {}
+    for cond in conditions:
+        hits, vn, ve = shortest_paths_to_patients(H, cond["anchor"], max_hops)
+        for pid, info in hits.items():
+            all_paths[(cond["id"], pid)] = info["path"]
+        total_vn += vn
+        total_ve += ve
+
+    results: list[RetrievalResult] = []
+    for pid in patients:
+        matched_paths: dict[str, list[str]] = {}
+        acc = new_patient_accumulator(cond_ids)
+        for cond in conditions:
+            cid = cond["id"]
+            p = all_paths.get((cid, pid))
+            if p is not None:
+                matched_paths[cid] = p
+                acc[cid] = {
+                    "matched": True,
+                    "distance": len(p) - 1,
+                    "path": p,
+                    "cost": 0.0,
+                    "reason": "MATCH",
+                    "pruned": False,
+                }
+            else:
+                acc[cid] = {
+                    "matched": False,
+                    "distance": None,
+                    "path": [],
+                    "cost": 0.0,
+                    "reason": "NOT REACHABLE within max_hops",
+                    "pruned": False,
+                }
+
+        edge_costs: dict[tuple[str, str], float] = {}
+        for cid, path in matched_paths.items():
+            for i in range(len(path) - 1):
+                ek = _edge_key(path, i)
+                if ek not in edge_costs:
+                    edge_costs[ek] = edge_cost(H, ek[0], ek[1], rho=rho)
+
+        kept = _prune_by_prize(matched_paths, edge_costs, prizes)
+        pruned_conds = set(matched_paths.keys()) - kept
+        for cid in pruned_conds:
+            acc[cid]["matched"] = False
+            acc[cid]["reason"] = "PRUNED by PCST (marginal edge cost > prize)"
+            acc[cid]["pruned"] = True
+
+        for cid in kept:
+            path = matched_paths[cid]
+            cost = sum(edge_costs.get(_edge_key(path, i), 0.0) for i in range(len(path) - 1))
+            acc[cid]["cost"] = cost
+
+        cov_n = coverage_count(acc)
+        cov_r = coverage_ratio(acc, m)
+        matched = [cid for cid in cond_ids if acc[cid]["matched"]]
+
+        sub_nodes: set[str] = set([pid])
+        sub_edges: list[dict[str, Any]] = []
+        seen_edges: set[tuple[str, str, str]] = set()
+        for cid in matched:
+            path = acc[cid]["path"]
+            for n in path:
+                sub_nodes.add(n)
+            for i in range(len(path) - 1):
+                u, v = _edge_key(path, i)
+                for _, vv, k, edata in H.out_edges(u, keys=True, data=True):
+                    if vv == v and (u, v, k) not in seen_edges:
+                        seen_edges.add((u, v, k))
+                        row = {"source": u, "target": v, "relation_type": k}
+                        row.update({kk: vv for kk, vv in edata.items()})
+                        sub_edges.append(row)
+                        break
+        for e in sub_edges:
+            e["_cost"] = edge_cost(H, e["source"], e["target"], rho=rho)
+        union_cost = sum(e["_cost"] for e in sub_edges)
+
+        score = score_generic(acc, m)
+        results.append(RetrievalResult(
+            patient_id=pid,
+            algorithm="pcst_shared",
             score=score,
             coverage_count=cov_n,
             coverage_ratio=cov_r,

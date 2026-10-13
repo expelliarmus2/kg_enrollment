@@ -1,0 +1,117 @@
+{
+  "version": "pgr-structured-query/v2",
+  "queries": [
+    {
+      "id": "B01",
+      "question": "报告时年龄10至40周岁且病理诊断描述命中骨肉瘤的患者",
+      "query": {
+        "operator": "same_case_all",
+        "items": [
+          {"type": "text", "all": ["病理", "骨肉瘤"]},
+          {"type": "number", "entity": "年龄", "operator": "between", "values": [10, 40], "unit": "岁"}
+        ]
+      }
+    },
+    {
+      "id": "B02",
+      "question": "存在肺转移相关诊断记录的患者",
+      "query": {
+        "operator": "patient_all",
+        "items": [
+          {"type": "text", "all": ["诊断", "肺转移"]}
+        ]
+      }
+    },
+    {
+      "id": "B03",
+      "question": "存在有日期的截肢或离断手术记录的患者",
+      "query": {
+        "operator": "patient_all",
+        "items": [
+          {"type": "text", "all": ["手术"], "any": ["截肢", "离断"], "required": ["event_date"]}
+        ]
+      }
+    },
+    {
+      "id": "B04",
+      "question": "同一病案内病理报告后1至30天有手术记录的患者",
+      "query": {
+        "operator": "same_case_temporal",
+        "from": {"type": "text", "all": ["病理"], "required": ["event_date"]},
+        "to": {"type": "text", "all": ["手术"], "required": ["event_date"]},
+        "date_gap_days": [1, 30]
+      }
+    },
+    {
+      "id": "B05",
+      "question": "存在骨肉瘤病理描述并有高血压或糖尿病诊断记录的患者",
+      "query": {
+        "operator": "patient_all",
+        "items": [
+          {"type": "text", "all": ["病理", "骨肉瘤"]},
+          {"type": "text", "all": ["诊断"], "any": ["高血压", "糖尿病"]}
+        ]
+      }
+    },
+    {
+      "id": "B06",
+      "question": "至少一次ALT数值大于该行参考上限的患者",
+      "query": {
+        "operator": "patient_all",
+        "items": [
+          {"type": "field_compare", "entity": "ALT", "left": "value", "operator": ">", "right": "reference_upper", "required": ["value", "reference_upper"]}
+        ]
+      }
+    },
+    {
+      "id": "B07",
+      "question": "同一病案具备病理、手术及HB/PLT/ALT/LDH有效资料的患者",
+      "query": {
+        "operator": "same_case_all",
+        "items": [
+          {"type": "text", "all": ["病理"]},
+          {"type": "text", "all": ["手术"]},
+          {"type": "number", "entity": "HB", "required": ["value", "sample_date"]},
+          {"type": "number", "entity": "PLT", "required": ["value", "sample_date"]},
+          {"type": "number", "entity": "ALT", "required": ["value", "sample_date"]},
+          {"type": "number", "entity": "LDH", "required": ["value", "sample_date"]}
+        ]
+      }
+    },
+    {
+      "id": "B08",
+      "question": "同一病案至少两个不同采样日期的LDH大于各次参考上限的患者",
+      "query": {
+        "operator": "same_case_count_distinct",
+        "filter": {"type": "field_compare", "entity": "LDH", "left": "value", "operator": ">", "right": "reference_upper", "required": ["value", "reference_upper", "sample_date"]},
+        "distinct_field": "sample_date",
+        "minimum": 2
+      }
+    },
+    {
+      "id": "B09",
+      "question": "本批最早有日期手术之后存在复发相关诊断记录的患者",
+      "query": {
+        "operator": "patient_after_first",
+        "first": {"type": "text", "all": ["手术"], "required": ["event_date"]},
+        "after": {"type": "text", "all": ["诊断", "复发"], "required": ["event_date"]}
+      }
+    },
+    {
+      "id": "B10",
+      "question": "同一病案满足骨肉瘤病理、报告时10至40周岁及指定资料齐备的患者",
+      "query": {
+        "operator": "same_case_all",
+        "items": [
+          {"type": "text", "all": ["病理", "骨肉瘤"]},
+          {"type": "number", "entity": "年龄", "operator": "between", "values": [10, 40], "unit": "岁"},
+          {"type": "text", "all": ["手术"]},
+          {"type": "number", "entity": "HB", "required": ["value", "sample_date"]},
+          {"type": "number", "entity": "PLT", "required": ["value", "sample_date"]},
+          {"type": "number", "entity": "ALT", "required": ["value", "sample_date"]},
+          {"type": "number", "entity": "LDH", "required": ["value", "sample_date"]}
+        ]
+      }
+    }
+  ]
+}

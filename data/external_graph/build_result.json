@@ -1,0 +1,20 @@
+{
+  "accepted_chunks": 100,
+  "cache_stats": {
+    "hits": 0,
+    "misses": 100,
+    "writes": 100
+  },
+  "committed_chunks": 100,
+  "current_chunk_count": 100,
+  "edge_count": 4585,
+  "format_version": "computable-build-result/v1",
+  "loss_counts": {
+    "continuation_limit": 1,
+    "definition_rejected": 15
+  },
+  "mode": "create",
+  "node_count": 673,
+  "skipped_chunks": 0,
+  "window_ordinal": 0
+}

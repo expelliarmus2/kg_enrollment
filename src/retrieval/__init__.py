@@ -11,8 +11,8 @@ import networkx as nx
 
 from .base import RetrievalResult
 from .bfs import retrieve_bfs
-from .pcst import retrieve_pcst
-from .steiner_keyword import retrieve_steiner
+from .pcst import retrieve_pcst, retrieve_pcst_shared
+from .steiner_keyword import retrieve_steiner, retrieve_steiner_shared
 
 
 def retrieve(
@@ -34,7 +34,14 @@ def retrieve(
         return retrieve_pcst(graph, conditions, max_hops=max_hops, strict=strict,
                               soft_threshold=soft_threshold, rho=rho,
                               condition_prize=condition_prize)
+    if algo == "pcst_shared":
+        return retrieve_pcst_shared(graph, conditions, max_hops=max_hops, strict=strict,
+                                    soft_threshold=soft_threshold, rho=rho,
+                                    condition_prize=condition_prize)
     if algo == "steiner":
         return retrieve_steiner(graph, conditions, max_hops=max_hops, strict=strict,
                                 soft_threshold=soft_threshold, rho=rho)
-    raise ValueError(f"Unknown algorithm: {algorithm!r} (use bfs/pcst/steiner)")
+    if algo == "steiner_shared":
+        return retrieve_steiner_shared(graph, conditions, max_hops=max_hops, strict=strict,
+                                       soft_threshold=soft_threshold, rho=rho)
+    raise ValueError(f"Unknown algorithm: {algorithm!r} (use bfs/pcst/pcst_shared/steiner/steiner_shared)")

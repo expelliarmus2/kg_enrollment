@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>检索算法步骤与复杂度详解 · Retrieval Pipeline</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 28px;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #0f1620; color: #dfe6ee; font-size: 14px; line-height: 1.55;
+  }
+  header { margin-bottom: 14px; border-bottom: 2px solid #2a4365; padding-bottom: 12px; }
+  header h1 { margin: 0 0 4px; font-size: 21px; color: #fff; }
+  header .sub { color: #8aa6c1; font-size: 13px; }
+  h2.section { color: #6fa8dc; font-size: 16px; margin: 26px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #283648; text-transform: uppercase; letter-spacing: .5px; }
+  h2.section .n { display: inline-block; background: #2c6e9f; color: #fff; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 13px; margin-right: 8px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; margin: 12px 0 4px; color: #8aa6c1; }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1px solid #283648; }
+  .table-wrap { overflow-x: auto; border: 1px solid #1f2c39; border-radius: 6px; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 760px; }
+  th, td { padding: 9px 11px; text-align: left; border-bottom: 1px solid #1f2c39; border-right: 1px solid #1f2c39; vertical-align: top; }
+  th { background: #1b2a3a; color: #6fa8dc; text-transform: uppercase; letter-spacing: .5px; font-size: 11px; position: sticky; top: 0; }
+  td.step { font-weight: 700; color: #6fa8dc; text-align: center; width: 40px; }
+  td.stage { font-weight: 600; color: #dfe6ee; width: 140px; }
+  td.code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; color: #8aa6c1; }
+  tr.shared td { background: #141d28; color: #9aa9b8; }
+  tr.shared td.step, tr.shared td.stage { color: #6a7a8a; }
+  tr.diff td { background: #1a2a1a; }
+  tr.diff td.step, tr.diff td.stage { color: #5fd36a; }
+  .bfs { color: #6fa8dc; }
+  .steiner { color: #e0a04a; }
+  .pcst { color: #e06a6a; }
+  .shared-tag { color: #b06ae0; }
+  .pill { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 8px; margin-left: 4px; vertical-align: middle; }
+  .pill.cut { background: #3a2030; color: #e06a6a; border: 1px solid #e06a6a; }
+  .pill.keep { background: #1c2837; color: #5fd36a; border: 1px solid #5fd36a; }
+  .pill.opt { background: #2a1a3a; color: #b06ae0; border: 1px solid #b06ae0; }
+  code { background: #0d141d; padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #e0c34a; }
+  .formula { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #e0c34a; }
+  .big { font-size: 13px; font-weight: 700; }
+  .note { margin-top: 12px; padding: 12px 14px; background: #16202c; border: 1px solid #283648; border-radius: 6px; font-size: 12px; color: #9aa9b8; }
+  .note b { color: #dfe6ee; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  .card { background: #16202c; border: 1px solid #283648; border-radius: 6px; padding: 12px 14px; font-size: 13px; }
+  .card h3 { margin: 0 0 8px; color: #6fa8dc; font-size: 13px; }
+  .card ul { margin: 6px 0 0; padding-left: 18px; }
+  .card li { margin-bottom: 4px; }
+  .ex { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: #0d141d; padding: 10px 12px; border-radius: 4px; border: 1px solid #1f2c39; color: #b9c8d8; white-space: pre-wrap; }
+  .hl { color: #5fd36a; }
+  .anchor-tbl td:first-child { width: 130px; font-weight: 600; color: #6fa8dc; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>检索算法步骤与复杂度详解</h1>
+  <div class="sub">5 种实现：BFS / Steiner / PCST / <span class="shared-tag">steiner_shared</span> / <span class="shared-tag">pcst_shared</span> &nbsp;·&nbsp; 共享同一套"召回连通子图"机制，差异仅在 <b>Step 2 遍历</b> · <b>Step 3 剪枝</b> · <b>Step 6 打分</b></div>
+</header>
+
+<div class="legend">
+  <span class="item"><span class="sw" style="background:#141d28"></span>共享步骤</span>
+  <span class="item"><span class="sw" style="background:#1a2a1a"></span>差异步骤</span>
+  <span class="item"><span class="sw" style="background:#6fa8dc"></span>&nbsp;BFS</span>
+  <span class="item"><span class="sw" style="background:#e0a04a"></span>&nbsp;Steiner</span>
+  <span class="item"><span class="sw" style="background:#e06a6a"></span>&nbsp;PCST</span>
+  <span class="item"><span class="sw" style="background:#b06ae0"></span>&nbsp;shared 变体</span>
+</div>
+
+<h2 class="section"><span class="n">A</span>共享管线步骤（Step 0–7，三种基线算法）</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Step</th><th>阶段</th><th>BFS <span class="bfs">●</span></th><th>Steiner <span class="steiner">●</span></th><th>PCST <span class="pcst">●</span></th><th>代码位置</th></tr></thead>
+<tbody>
+
+<tr class="shared"><td class="step">0</td><td class="stage">输入</td>
+<td colspan="3">图 G（MultiDiGraph：患者/疾病/指标/药物/中间节点 + 有向边）；条件 conditions（anchor + 数值约束 operator/value）；参数 <code>max_hops=4 · strict · rho=0/1.3 · condition_prize=10</code></td>
+<td class="code">retrieval/__init__.py:18<br>retrieve() 分发</td></tr>
+
+<tr class="shared"><td class="step">1</td><td class="stage">构建条件图 H<br><span style="font-weight:400;color:#6a7a8a;font-size:11px">硬过滤</span></td>
+<td colspan="3">复制 G → 删除"数值型 anchor 发出的、不满足 <code>operator value</code> 的边"。<b>H 只含满足硬约束的边</b>，三种算法都在 H 上遍历。O(E) 一次。</td>
+<td class="code">constraints.py:55<br>build_query_conditioned_graph</td></tr>
+
+<tr class="diff"><td class="step">2</td><td class="stage">找 anchor→患者 路径<br><span style="font-weight:400;font-size:11px;color:#5a8a6a">差异①</span></td>
+<td class="bfs">每个 anchor <b>一次</b> BFS 到 max_hops，记录到每个可达患者的<b>最短路径</b>（首次命中即最短）。</td>
+<td class="steiner">每个 <b>(anchor, 患者)</b> 单独 BFS 求最短路径，命中即停。</td>
+<td class="pcst">同 Steiner：每个 (anchor, 患者) 单独求最短路径。</td>
+<td class="code">bfs.py:33 _bfs_from_anchor<br>steiner_keyword.py:34<br>pcst.py:46<br><span class="shared-tag">shared: _traversal.py:21</span></td></tr>
+
+<tr class="diff"><td class="step">3</td><td class="stage">边代价 + 剪枝<br><span style="font-weight:400;font-size:11px;color:#5a8a6a">差异②</span></td>
+<td class="bfs">边代价 <code>1+ρ·log(1+deg)</code> 仅入打分。<b>不剪</b>。<span class="pill keep">keep all</span></td>
+<td class="steiner">边代价仅入打分。<b>不剪</b>。<span class="pill keep">keep all</span></td>
+<td class="pcst">若 整条路径代价 &gt; <code>condition_prize(10)</code> → <b>丢该条件</b>（matched=False, reason=PRUNED）。<span class="pill cut">prune</span><br><span style="font-size:11px;color:#9a8a8a">ρ=1.3 时绕 hub 路径变贵→易被剪</span></td>
+<td class="code">graph_model.py:55 edge_cost<br>pcst.py:80 _prune_by_prize</td></tr>
+
+<tr class="shared"><td class="step">4</td><td class="stage">拼连通子图 G_p</td>
+<td colspan="3"><code>sub_nodes = {患者} ∪ 各命中路径节点</code>；<code>sub_edges = 各路径相邻边去重(按 u,v,key)</code>。每条路径 anchor→…→患者，<b>并集天然连通</b>（均以患者为端点）。共享边只算一次 → <code>union_cost</code>。</td>
+<td class="code">bfs.py:120 / pcst.py:188<br>steiner_keyword.py:121</td></tr>
+
+<tr class="shared"><td class="step">5</td><td class="stage">覆盖度指标</td>
+<td colspan="3">coverage_count = 命中条件数 &nbsp;|&nbsp; coverage_ratio = 命中/总条件数 &nbsp;|&nbsp; strict_match = ratio≥1</td>
+<td class="code">scoring.py<br>coverage_count / ratio</td></tr>
+
+<tr class="diff"><td class="step">6</td><td class="stage">打分<br><span style="font-weight:400;font-size:11px;color:#5a8a6a">差异③</span></td>
+<td class="bfs"><span class="formula">score_generic</span><br>= α·Cov^γ − β·AvgDist − η·Imbalance − λ·GraphCost</td>
+<td class="steiner"><span class="formula">score_steiner</span><br>= α·Coverage − β·C(G_p) − η·MaxDistance</td>
+<td class="pcst"><span class="formula">score_generic</span><br>（同 BFS 打分函数）</td>
+<td class="code">scoring.py<br>score_generic / score_steiner</td></tr>
+
+<tr class="shared"><td class="step">7</td><td class="stage">输出</td>
+<td colspan="3">每患者一条 <code>RetrievalResult</code>（base.py）：patient_id · score · coverage_count · matched_conditions · condition_paths · <b>nodes</b> · <b>edges</b> · graph_cost · strict_match · visited_nodes/edges · elapsed_ms</td>
+<td class="code">retrieval/base.py:10<br>RetrievalResult.to_dict</td></tr>
+
+</tbody>
+</table>
+</div>
+
+<h2 class="section"><span class="n">B</span>Shared 变体步骤详解（steiner_shared / pcst_shared）</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Step</th><th>阶段</th><th class="shared-tag">steiner_shared</th><th class="shared-tag">pcst_shared</th><th>与朴素版差异</th></tr></thead>
+<tbody>
+
+<tr class="shared"><td class="step">0</td><td class="stage">输入</td><td colspan="2">同 Steiner / PCST（algorithm 参数分别为 <code>"steiner_shared"</code> / <code>"pcst_shared"</code>）</td><td>无</td></tr>
+
+<tr class="shared"><td class="step">1</td><td class="stage">条件图 H</td><td colspan="2">同：build_query_conditioned_graph 删数值失败边</td><td>无</td></tr>
+
+<tr class="diff"><td class="step">2</td><td class="stage">找路径<br><span class="opt" style="font-size:11px">★优化点</span></td>
+<td class="shared-tag"><b>每个 anchor 一次 BFS → 全部可达患者</b>（<code>shortest_paths_to_patients</code>）。一次遍历同时记录到所有患者的最短路径。</td>
+<td class="shared-tag">同左：<code>shortest_paths_to_patients</code> 一次 BFS → 全患者</td>
+<td><b>仅此步不同</b><br>朴素版每 (anchor,患者) 单独 BFS；shared 改成每 anchor 一次 BFS 复用给所有患者 → <b>患者数 P 不再乘进复杂度</b>。</td></tr>
+
+<tr class="shared"><td class="step">3</td><td class="stage">边代价+剪枝</td><td>不剪（同 Steiner）<span class="pill keep">keep all</span></td><td>路径代价&gt;prize 则丢（同 PCST）<span class="pill cut">prune</span></td><td>无（与各自朴素版一致）</td></tr>
+
+<tr class="shared"><td class="step">4</td><td class="stage">拼连通子图</td><td colspan="2">同：并路径、去重共享边、天然连通</td><td>无</td></tr>
+
+<tr class="shared"><td class="step">5</td><td class="stage">覆盖度</td><td colspan="2">同：coverage_count / ratio / strict_match</td><td>无</td></tr>
+
+<tr class="diff"><td class="step">6</td><td class="stage">打分</td><td><span class="formula">score_steiner</span>（同 Steiner）</td><td><span class="formula">score_generic</span>（同 PCST）</td><td>无</td></tr>
+
+<tr class="shared"><td class="step">7</td><td class="stage">输出</td><td><code>algorithm="steiner_shared"</code></td><td><code>algorithm="pcst_shared"</code></td><td>无（输出与朴素版<b>逐字段一致</b>，仅 algorithm 标签不同）</td></tr>
+
+</tbody>
+</table>
+</div>
+<div class="note"><b>结论：</b>shared 变体 = 各自朴素版的<b>性能优化版</b>。<b>语义/输出完全相同</b>（同最短路径、同剪枝、同并子图、同打分），<b>仅 Step 2 遍历从 O(K·P·(V+E)) 降到 O(K·(V+E))</b>。大规模患者集时 shared 快 P 倍。</div>
+
+<h2 class="section"><span class="n">C</span>复杂度对比表（5 算法）</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>算法</th><th>Step 2 遍历策略</th><th>单次搜索范围</th><th>BFS 次数</th><th>搜索总复杂度</th><th>相对基线</th></tr></thead>
+<tbody>
+<tr><td class="bfs">BFS 基线</td><td>一锚一次 BFS</td><td>全图可达患者</td><td>K</td><td><span class="formula big">O(K·(V+E))</span></td><td><span class="pill keep">1×</span> 基线，本就高效</td></tr>
+<tr><td class="steiner">steiner（朴素）</td><td>每(锚,患者) BFS</td><td>锚→单个患者</td><td>K·P</td><td><span class="formula big">O(K·P·(V+E))</span></td><td><span class="pill cut">P×</span> 患者数翻倍</td></tr>
+<tr><td class="pcst">pcst（朴素）</td><td>每(锚,患者) BFS</td><td>锚→单个患者</td><td>K·P</td><td><span class="formula big">O(K·P·(V+E))</span></td><td><span class="pill cut">P×</span></td></tr>
+<tr><td class="shared-tag">steiner_shared</td><td>一锚一次 BFS</td><td>全图可达患者</td><td>K</td><td><span class="formula big">O(K·(V+E))</span></td><td><span class="pill opt">1×</span> ← P 去掉，输出同 steiner</td></tr>
+<tr><td class="shared-tag">pcst_shared</td><td>一锚一次 BFS</td><td>全图可达患者</td><td>K</td><td><span class="formula big">O(K·(V+E))</span></td><td><span class="pill opt">1×</span> ← P 去掉，输出同 pcst</td></tr>
+</tbody>
+</table>
+</div>
+<div class="note"><b>记号：</b>K=条件数(=anchor 数)，P=患者数，V/E=H 的节点/边数。<b>关键洞察</b>：从"一个 anchor 多跳到<b>所有</b>患者"做一次 BFS，即可同时拿到该 anchor 到每个患者的最短路径——不必逐个患者召回。这是 shared 把 P 从复杂度里消掉的根因（<code>_traversal.py:3-6</code>）。</div>
+
+<h2 class="section"><span class="n">D</span>数据流与数据结构</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>核心中间结构</h3>
+    <ul>
+      <li><b>H</b>：query-conditioned graph，G 副本、删数值失败边（MultiDiGraph）</li>
+      <li><b>paths / all_paths</b>：<code>dict[(cid, pid)]</code> → <code>[anchor,…,pid]</code> 或 <code>None</code></li>
+      <li><b>acc[cid]</b>：<code>{matched, distance, path, cost, reason, pruned?}</code>（每患者每条件一条）</li>
+      <li><b>edge_costs</b>：<code>dict[(u,v)]</code> → <code>edge_cost</code>（去重缓存）</li>
+      <li><b>sub_nodes / sub_edges</b>：患者并子图，边按 <code>(u,v,key)</code> 去重</li>
+      <li><b>RetrievalResult</b>：最终每患者一条（见 Step 7）</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>edge_cost（hub 惩罚）</h3>
+    <div class="formula">c(e) = base(1.0) + ρ · log(1 + deg(v))</div>
+    <ul>
+      <li>ρ=0：每边代价 1（纯跳数）</li>
+      <li>ρ=1.3：进入高数 hub 的边变贵 → 路径代价↑ → PCST 更易剪、Steiner 打分更低</li>
+      <li>作用于"目标节点 v"的度数，惩罚 hub 中转</li>
+    </ul>
+  </div>
+</div>
+
+<h3 style="color:#6fa8dc;font-size:14px;margin:16px 0 8px">连通子图构造示例（Step 4）</h3>
+<div class="ex">条件 C1(anchor=A1)、C2(anchor=A2)，患者 P004，都命中：
+  C1 path: <span class="hl">A1 → X → P004</span>
+  C2 path: <span class="hl">A2 → Y → P004</span>   （也经 X？下面演示共享边）
+
+若 C2 path 改为 <span class="hl">A2 → X → P004</span>（与 C1 共享边 X→P004）：
+  sub_nodes = {P004, A1, A2, X}
+  sub_edges = {A1→X, X→P004, A2→X}   ← X→P004 只计 <b>一次</b>
+  union_cost = c(A1→X) + c(X→P004) + c(A2→X)
+  连通性：A1→X→P004 且 A2→X→P004，均汇到 P004 ⇒ <b>天然连通</b></div>
+
+<h2 class="section"><span class="n">E</span>差异速查（三处分歧点）</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>① Step 2 · 找路径</h3>
+    <ul>
+      <li class="bfs">BFS：一锚一次 BFS→全患者（O(K·(V+E))）</li>
+      <li class="steiner">Steiner：每(锚,患者) BFS（O(K·P·(V+E))）</li>
+      <li class="pcst">PCST：同 Steiner</li>
+      <li class="shared-tag">shared：改回一锚一次 BFS→全患者（O(K·(V+E))）</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>② Step 3 · 剪枝 &nbsp;③ Step 6 · 打分</h3>
+    <ul>
+      <li class="bfs">BFS：不剪 · score_generic</li>
+      <li class="steiner">Steiner：不剪 · score_steiner</li>
+      <li class="pcst">PCST：路径代价&gt;prize 则剪 · score_generic</li>
+      <li>shared：剪枝/打分与各自朴素版<b>一致</b></li>
+    </ul>
+  </div>
+</div>
+
+<div class="note" style="margin-top:18px"><b>一句话总结：</b>"召回连通子图"是 5 种实现共用的并路径机制（Step 4，以患者为端点天然连通）；算法差异只在<b>遍历策略</b>（Step 2：一锚全患者 vs 逐患者）与<b>取舍策略</b>（Step 3：剪/不剪）。shared 变体不改变语义，只把 Step 2 的 P 因子从复杂度中消除。</div>
+
+<h2 class="section"><span class="n">F</span>检索机制澄清（不是"只取交集"）</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>每个条件 → 一堆 anchor→患者 路径</h3>
+    <ul>
+      <li>在<b>硬过滤图 H</b> 上扩散（数值型 anchor 的不满足边已删）</li>
+      <li><b>categorical</b>：anchor 可达患者 = 满足</li>
+      <li><b>numeric</b>：anchor→患者边值须满足 <code>op value</code>（如 LDH&gt;300）</li>
+      <li>每条件得到一个"满足患者集"+ 到每个患者的最短路径</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>结果 ≠ 只取交集</h3>
+    <ul>
+      <li>对<b>每个患者</b>产一条 RetrievalResult，<code>coverage_count</code>=命中条件数（0..m）</li>
+      <li><b>strict cohort (m/m) = 各条件患者集的交集</b>（仅 BFS/Steiner）</li>
+      <li><b>PCST</b> 先按路径代价&gt;prize 剪条件，再做交集 → cohort 可能更小</li>
+      <li>每患者子图 = 命中路径<b>并集</b>（非交集；各路径终到患者→天然连通），共享边去重</li>
+    </ul>
+  </div>
+</div>
+<div class="note"><b>修正直觉：</b>"一堆轨迹连到患者、取交集得结果" = BFS/Steiner 的 strict cohort 准确直觉；但管线还做 <b>per-patient coverage + 并子图 + 打分排名</b>，PCST 多了代价剪枝，不只是交集。</div>
+
+<h2 class="section"><span class="n">G</span>扩散压缩基准（bench_diffusion.py，avg 20 次）</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>图</th><th>策略</th><th>vis_nodes</th><th>vis_edges</th><th>#results</th><th>wall_ms</th><th>相对 bfs</th></tr></thead>
+<tbody>
+<tr><td rowspan="5">合成图<br>(8患者,无死分支)</td><td class="bfs">bfs</td><td>58</td><td>73</td><td>8</td><td>1.45</td><td>1.0×</td></tr>
+<tr><td class="pcst">pcst 朴素</td><td>276</td><td>265</td><td>8</td><td>1.99</td><td>0.73×</td></tr>
+<tr><td>pcst_shared</td><td>58</td><td>73</td><td>8</td><td>1.56</td><td>0.93×</td></tr>
+<tr><td>bfs+A 预过滤</td><td>58</td><td>73</td><td>8</td><td>1.61</td><td>0.90×</td></tr>
+<tr><td>B 候选只出</td><td>58</td><td>73</td><td>8</td><td>1.43</td><td>1.02×</td></tr>
+<tr><td rowspan="5">外部图<br>(100患者,1跳)</td><td class="bfs">bfs</td><td>67</td><td>110</td><td>100</td><td>10.8</td><td>1.0×</td></tr>
+<tr><td class="pcst">pcst 朴素</td><td>6012</td><td>9925</td><td>100</td><td><b>46.1</b></td><td>0.23×</td></tr>
+<tr><td>pcst_shared</td><td>67</td><td>110</td><td>100</td><td>11.0</td><td>0.98×</td></tr>
+<tr><td>bfs+A 预过滤</td><td>67</td><td>110</td><td>100</td><td>13.9</td><td>0.78×</td></tr>
+<tr><td>B 候选只出</td><td>67</td><td>110</td><td><b>33</b></td><td>10.0</td><td>1.07×</td></tr>
+<tr><td rowspan="3">死分支图<br>(10患者+200sink)</td><td class="bfs">bfs</td><td>223</td><td>221</td><td>10</td><td>3.29</td><td>1.0×</td></tr>
+<tr><td><b>bfs+A 预过滤</b></td><td><b>23</b></td><td>121</td><td>10</td><td>4.00</td><td>0.82×</td></tr>
+<tr><td>B 候选只出</td><td>223</td><td>221</td><td>10</td><td>3.24</td><td>1.01×</td></tr>
+</tbody>
+</table></div>
+<div class="note"><b>结论：</b>恒定的大压缩是 <b>shared 变体</b>（外部图 46ms→11ms，<b>4.3× 时间 / 90× visited</b>，消去 P 因子，已在代码中）。<b>A（反向可达预过滤）</b>结构有效（死分支图 visited 223→23，10×），但小图墙钟中性/略慢（预计算 O(V+E) 开销）；<b>大规模+死分支海量时</b>才净赚。<b>B</b> 约 7%（跳过 0 覆盖患者，省结果构造不省搜索）。<b>1200w 规模真解</b>＝ shared + 索引驱动候选集 + 延迟拼子图，下面 §H 的 SQL 下沉就是索引驱动的实例。</div>
+
+<h2 class="section"><span class="n">H</span>SQL 下沉方案（hub→patient 边离图进 SQLite，hub 节点 BFS+SQL 并行）</h2>
+<style>
+  .flow { display:flex; gap:16px; align-items:stretch; margin:14px 0; flex-wrap:wrap; }
+  .box { background:#16202c; border:1px solid #283648; border-radius:8px; padding:12px 14px; flex:1; min-width:180px; }
+  .box.graph { border-color:#4a90d9; } .box.sql { border-color:#b06ae0; }
+  .box.merge { border-color:#5fd36a; } .box h4 { margin:0 0 8px; font-size:13px; }
+  .box.graph h4 { color:#6fa8dc; } .box.sql h4 { color:#b06ae0; } .box.merge h4 { color:#5fd36a; }
+  .box ul { margin:4px 0 0; padding-left:16px; font-size:12px; }
+  .arrows { display:flex; flex-direction:column; justify-content:center; align-items:center; color:#5fd36a; font-size:20px; font-weight:700; }
+  .pillhub { background:#2a1a3a; color:#b06ae0; border:1px solid #b06ae0; }
+  .schema { font-family:ui-monospace,Menlo,monospace; font-size:11px; background:#0d141d; border:1px solid #1f2c39; border-radius:4px; padding:10px 12px; color:#b9c8d8; white-space:pre; margin:10px 0; overflow-x:auto; }
+</style>
+<div class="grid2">
+  <div class="card">
+    <h3>下沉规则</h3>
+    <ul>
+      <li>节点 patient-边数 <b>&gt; 20</b></li>
+      <li>边<b>指向 patient</b></li>
+      <li>边类 ∈ {<code>number</code>, <code>text</code>}（数值 + 确诊/事件/性别等标签）</li>
+      <li>满足则 hub→patient 边<b>进 SQL</b>；<b>hub→非patient 边保留在图里</b></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>hub 节点检索：BFS + SQL 并行</h3>
+    <ul>
+      <li><b>(1) SQL 查询</b>：该 hub 的 patient 扇出<br>若 hub==numeric anchor → <code>WHERE value op ?</code>；否则无过滤</li>
+      <li><b>(2) BFS 续展</b>：沿 hub 保留的<b>非 patient</b>出边多跳找患者</li>
+      <li>两路命中<b>合并</b>进 hits（<code>reason=SQL / BFS</code>）</li>
+    </ul>
+  </div>
+</div>
+<div class="schema">CREATE TABLE hub_patient_edges (
+  hub TEXT, patient TEXT, kind TEXT,          -- number|text
+  value REAL, unit TEXT, raw_relation TEXT,
+  relation_type TEXT, chunk_id TEXT, valid_at TEXT, invalid_at TEXT);
+CREATE INDEX idx_hub     ON hub_patient_edges(hub);
+CREATE INDEX idx_hub_val  ON hub_patient_edges(hub, value);   -- 数值范围扫描</div>
+
+<h3 style="color:#6fa8dc;font-size:14px;margin:16px 0 6px">流程图</h3>
+<div class="flow">
+  <div class="box graph">
+    <h4>NetworkX 图（瘦身后）</h4>
+    <ul>
+      <li>非 hub 节点 + 全部边</li>
+      <li>hub 节点保留</li>
+      <li>hub→<b>非patient</b> 边保留</li>
+      <li>hub→patient 边<b>已移除</b></li>
+    </ul>
+  </div>
+  <div class="box sql">
+    <h4>SQLite 表 hub_patient_edges</h4>
+    <ul>
+      <li>hub→patient 边（高扇出）</li>
+      <li>索引 idx_hub / idx_hub_val</li>
+      <li>数值条件 → 范围扫描</li>
+      <li>确诊/标签 → 存在性查询</li>
+    </ul>
+  </div>
+  <div class="box merge">
+    <h4>检索遇 hub 节点</h4>
+    <ul>
+      <li><b>(1) SQL</b> 查 patient 扇出</li>
+      <li><b>(2) BFS</b> 续展非patient边</li>
+      <li>→ 合并 hits</li>
+    </ul>
+  </div>
+</div>
+
+<h3 style="color:#6fa8dc;font-size:14px;margin:16px 0 6px">本例查询条件（入组标准）</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>id</th><th>anchor（实体节点）</th><th>kind</th><th>operator</th><th>value</th><th>unit</th><th>路径</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td>entity:经典型骨肉瘤</td><td>categorical</td><td>—</td><td>—</td><td>—</td><td class="bfs">BFS（10 边，未下沉）</td></tr>
+<tr><td>C2</td><td>entity:乳酸脱氢酶(LDH)</td><td>numeric</td><td>&gt;</td><td>300</td><td>U/L</td><td class="shared-tag">SQL（hub，92 扇出）</td></tr>
+<tr><td>C3</td><td>entity:碱性磷酸酶</td><td>numeric</td><td>&gt;</td><td>300</td><td>U/L</td><td class="shared-tag">SQL（hub，87 扇出）</td></tr>
+<tr><td>C4</td><td>entity:年龄</td><td>numeric</td><td>&gt;=</td><td>10</td><td>岁</td><td class="shared-tag">SQL（hub，33 扇出）</td></tr>
+<tr><td>C5</td><td>entity:血沉</td><td>numeric</td><td>&gt;</td><td>30</td><td>mm/h</td><td class="bfs">BFS（14 边，未下沉）</td></tr>
+</tbody>
+</table></div>
+<div class="note">入组语义：strict cohort = 5 条件患者集的<b>交集</b>（同时满足 C1∧C2∧C3∧C4∧C5）。numeric 条件 = anchor→患者边值满足 <code>op value</code>（C2/3/4 走 SQL <code>WHERE value op ?</code>，C5 走图 BFS 由 build_query 过滤）。categorical C1 = 确诊可达。下沉与否由 patient-边数 &gt;20 决定。</div>
+
+<h3 style="color:#6fa8dc;font-size:14px;margin:16px 0 6px">实测（hub_sql_retriever.py，本地外部图副本）</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>指标</th><th>baseline (全图 BFS)</th><th>SQL 下沉 (BFS+SQL)</th><th>变化</th></tr></thead>
+<tbody>
+<tr><td>图边数</td><td>1693</td><td>666</td><td><b>−60.7%</b></td></tr>
+<tr><td>offload hubs / SQL 行</td><td>—</td><td>18 hubs / 1027 行</td><td>—</td></tr>
+<tr><td>visited_nodes (search)</td><td>76</td><td>17</td><td>−77.6%</td></tr>
+<tr><td>wall_ms</td><td>12.96</td><td>6.11</td><td><b>2.12× 加速</b></td></tr>
+<tr><td>coverage 分布</td><td>{4:8,3:4,2:6,1:15,0:67}</td><td>{4:8,3:4,2:6,1:15,0:67}</td><td><b>完全一致 ✓</b></td></tr>
+</tbody>
+</table></div>
+<div class="note"><b>读数：</b>18 个 hub（门诊事件179/LDH92/ALP87/HGB73/体温脉搏收缩压舒张压白细胞各56…）的 patient 扇出（1027 边）下沉到 SQL；图瘦 60%。检索时 <b>C2 LDH / C3 ALP / C4 年龄</b>走 SQL 路径（带值过滤），<b>C1 经典型骨肉瘤 / C5 血沉</b>走图 BFS（边数≤20 未下沉）。<b>coverage 与 baseline 完全一致</b>＝ SQL 路径与 BFS 路径合并正确。<b>2.12× 加速</b>在小图上有限，但 visited 降 77%、边数降 60%，<b>随规模/扇出增长线性放大</b>——这正是 1200w 规模的索引驱动形态。</div>
+
+<h2 class="section"><span class="n">I</span>规模缩放实测（scale_bench.py，收益随规模增长）</h2>
+<div class="note" style="border-color:#e0a04a"><b>诚实前提：</b>§H 的小图（100 患者外部图）2.12× 是<b>实测</b>但绝对值小（13ms→6ms）且部分来自 baseline 的 O(n²) 病理。<b>真正的收益在规模放大才显现</b>。下表为合成图（8 hub 扇出到全部患者 + 1 小疾病实体），3 条件：</div>
+<div class="table-wrap" style="margin:6px 0"><table>
+<thead><tr><th>id</th><th>anchor</th><th>kind</th><th>op</th><th>value</th><th>路径</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td>entity:骨肉瘤</td><td>categorical</td><td>—</td><td>—</td><td class="bfs">BFS（15 患者固定）</td></tr>
+<tr><td>C2</td><td>entity:LDH</td><td>numeric</td><td>&gt;</td><td>250</td><td class="shared-tag">SQL（hub，全患者扇出）</td></tr>
+<tr><td>C3</td><td>entity:HGB</td><td>numeric</td><td>&lt;</td><td>110</td><td class="shared-tag">SQL（hub，全患者扇出）</td></tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>n_patients</th><th>edges</th><th>wall_base_ms</th><th>wall_sql_ms</th><th>加速</th><th>vis_base</th><th>vis_sql</th></tr></thead>
+<tbody>
+<tr><td>1,000</td><td>8k</td><td>57</td><td>18</td><td><b>3.16×</b></td><td>271</td><td>18</td></tr>
+<tr><td>10,000</td><td>80k</td><td>1,565</td><td>290</td><td><b>5.39×</b></td><td>2,670</td><td>18</td></tr>
+<tr><td>50,000</td><td>400k</td><td>29,718</td><td>1,950</td><td><b>15.24×</b></td><td>13,610</td><td>18</td></tr>
+<tr><td>100,000</td><td>800k</td><td><b>111,745</b></td><td>3,077</td><td><b>36.31×</b></td><td>27,146</td><td>18</td></tr>
+</tbody>
+</table></div>
+<div class="note"><b>趋势：</b>加速 3.16×(1k) → 5.39×(10k) → 15.24×(50k) → <b>36.31×(100k)</b>，<b>随 n 单调增长</b>。baseline 墙钟 ~O(n²)（hub 扇出 × 命中患者数），SQL 版 ~O(n)（结果构造主导，搜索走索引）。visited：base 线性涨（271→27146），sql 恒为 18（hub 扇出不在图里、走 SQL）。<b>12M 无法内存装下实测</b>，但 baseline O(n²)→12M² 不可行，SQL 版 O(n) 可行（配候选只出可进一步降到 O(matches)）。</div>
+
+<h3 style="color:#6fa8dc;font-size:14px;margin:16px 0 6px">收益来源拆分（bench_pathology.py，n=10k）</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>策略</th><th>wall_ms</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="bfs">baseline bfs</td><td>1,540</td><td>拼 subgraph 回扫 hub 全部出边 → O(n²)</td></tr>
+<tr><td>bfs_fixed（存 edge_data、不回扫）</td><td>607</td><td><b>仅修代码病理 = 2.54×</b>（不靠 SQL 也能做）</td></tr>
+<tr><td class="shared-tag">sql_offload</td><td>305</td><td>再 +2× = <b>5.05× 合计</b></td></tr>
+</tbody>
+</table></div>
+<div class="note"><b>结论（诚实）：</b>收益 ≈ <b>一半来自代码病理修复（存 edge_data 免回扫）+ 一半来自 SQL 索引替 Python 遍历扇出</b>（10k 时；100k 时 O(n²) 病理占比更高）。<b>小图（≤1k）收益弱</b>（绝对值小、SQL 预计算开销还占）；<b>≥10k 起明显</b>；<b>100k 已 36×</b>。<b>1200w 的真解</b>＝ SQL 下沉 + 选择性条件（SQL 才 O(log n)）+ 候选只出（跳 0 覆盖），三者合用。脚本 <code>scale_bench.py</code> / <code>bench_pathology.py</code> 留在项目根可改规模/阈值复跑。</div>
+
+</body>
+</html>

@@ -24,6 +24,7 @@ let subNetwork = null, subNodes = null, subEdges = null;
 let currentConditions = [];
 let currentResults = [];
 let lastGraphData = null;
+let compareData = null, comparePatient = null, compareAlgo = "bfs";
 
 /* ---------- helpers ---------- */
 function toast(msg) {
@@ -170,6 +171,8 @@ async function runRetrieval() {
   const params = getParams();
   const conds = collectConditions();
   toast(`Running ${params.algorithm} (hops=${params.max_hops})...`);
+  document.getElementById("compare-tabs").style.display = "none";
+  document.getElementById("compare-metrics").style.display = "none";
   const data = await postJSON(API.retrieve, { ...params, conditions: conds });
   currentResults = data.results;
   renderPatientTable(data);
@@ -327,26 +330,34 @@ async function compareAlgorithms() {
   const conds = collectConditions();
   toast("Running all 3 algorithms...");
   const data = await postJSON(API.compare, { ...params, conditions: conds });
+  compareData = data;
   const tb = document.querySelector("#comparison-table tbody");
   tb.innerHTML = "";
+  function cell(v, key) {
+    if (!v) return "<td>-</td>";
+    const cls = v.strict ? "match" : "partial";
+    return `<td class="${cls}">${v[key]}</td>`;
+  }
+  function rankCell(v) {
+    if (!v) return "<td>-</td>";
+    const cls = v.strict ? "match" : "partial";
+    return `<td class="${cls}">#${v.rank} (${fmt(v.score, 1)})</td>`;
+  }
+  function sizeCell(v) {
+    if (!v) return "<td>-</td>";
+    return `<td>${v.visited_nodes} / ${v.visited_edges}</td>`;
+  }
   data.comparison_table.forEach(row => {
     const tr = document.createElement("tr");
-    function cell(v, key) {
-      if (!v) return "<td>-</td>";
-      const cls = v.strict ? "match" : "partial";
-      return `<td class="${cls}">${v[key]}</td>`;
-    }
-    function rankCell(v) {
-      if (!v) return "<td>-</td>";
-      const cls = v.strict ? "match" : "partial";
-      return `<td class="${cls}">#${v.rank} (${fmt(v.score, 1)})</td>`;
-    }
+    tr.className = "compare-row";
+    tr.dataset.patient = row.patient;
     tr.innerHTML = `
       <td><b>${row.patient}</b></td>
       <td>${row.ground_truth ? "✓" : ""}</td>
-      ${cell(row.bfs, "coverage")}${rankCell(row.bfs)}
-      ${cell(row.pcst, "coverage")}${rankCell(row.pcst)}
-      ${cell(row.steiner, "coverage")}${rankCell(row.steiner)}`;
+      ${cell(row.bfs, "coverage")}${rankCell(row.bfs)}${sizeCell(row.bfs)}
+      ${cell(row.pcst, "coverage")}${rankCell(row.pcst)}${sizeCell(row.pcst)}
+      ${cell(row.steiner, "coverage")}${rankCell(row.steiner)}${sizeCell(row.steiner)}`;
+    tr.onclick = () => selectComparePatient(row.patient);
     tb.appendChild(tr);
   });
   // metrics for each
@@ -361,7 +372,63 @@ async function compareAlgorithms() {
   area.innerHTML = cards.map(([l, v]) =>
     `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div></div>`
   ).join("");
+  // show compare-mode tabs + select first patient
+  document.getElementById("compare-tabs").style.display = "";
+  document.getElementById("compare-metrics").style.display = "";
+  if (data.comparison_table.length) {
+    selectComparePatient(data.comparison_table[0].patient);
+  }
   toast("Comparison ready");
+}
+
+function selectComparePatient(pid) {
+  comparePatient = pid;
+  document.querySelectorAll(".compare-row").forEach(r => {
+    r.classList.toggle("active", r.dataset.patient === pid);
+  });
+  document.getElementById("sub-patient-label").textContent = `${pid} (compare)`;
+  document.getElementById("path-explanation").innerHTML =
+    `<div class="path-block"><div class="head">Compare mode: ${pid} · switch tabs to compare subgraphs.</div>` +
+    `<div class="meta">Run single retrieval for full path explanation.</div></div>`;
+  renderCompareTabs();
+  renderCompareSubgraph();
+}
+
+function renderCompareTabs() {
+  const bar = document.getElementById("compare-tabs");
+  bar.innerHTML = "";
+  ["bfs", "pcst", "steiner"].forEach(algo => {
+    const btn = document.createElement("button");
+    btn.className = "tab" + (algo === compareAlgo ? " active" : "");
+    btn.textContent = algo.toUpperCase();
+    btn.onclick = () => {
+      compareAlgo = algo;
+      renderCompareTabs();
+      renderCompareSubgraph();
+    };
+    bar.appendChild(btn);
+  });
+}
+
+function renderCompareSubgraph() {
+  if (!compareData || !comparePatient) return;
+  const results = compareData.per_algorithm[compareAlgo].results;
+  const r = results.find(x => x.patient_id === comparePatient);
+  if (!r) return;
+  renderSubgraph(r);
+  const strip = document.getElementById("compare-metrics");
+  const m = 5;
+  const cards = [
+    ["Algorithm", compareAlgo.toUpperCase()],
+    ["Nodes", r.visited_nodes],
+    ["Edges", r.visited_edges],
+    ["Coverage", `${r.coverage_count}/${m}`],
+    ["Score", fmt(r.score)],
+    ["Runtime (ms)", fmt(r.elapsed_ms, 3)],
+  ];
+  strip.innerHTML = cards.map(([l, v]) =>
+    `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div></div>`
+  ).join("");
 }
 
 /* ---------- animate search ---------- */
